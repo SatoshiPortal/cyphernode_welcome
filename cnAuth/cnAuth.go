@@ -110,14 +110,13 @@ echo ""
 
 func ( cnAuth *CnAuth ) BearerFromKey( keyLabel string ) (string, error) {
   if keyHex, ok := cnAuth.keys[keyLabel]; ok {
-    h64 := base64.StdEncoding.EncodeToString( []byte("{\"alg\":\"HS256\",\"typ\":\"JWT\"}") )
-    p64 := base64.StdEncoding.EncodeToString( []byte(fmt.Sprintf("{\"id\":\"%s\",\"exp\":%d}", keyLabel, time.Now().Unix()+10 ) ) )
+    header := "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"
+    payload := fmt.Sprintf("{\"id\":\"%s\",\"exp\":%d}", keyLabel, time.Now().Unix()+10 )
+
+    h64 := base64.StdEncoding.EncodeToString( []byte(header) )
+    p64 := base64.StdEncoding.EncodeToString( []byte(payload) )
     toSign := h64+"."+p64
-    key, err := hex.DecodeString(keyHex)
-    if err != nil {
-      return "", err
-    }
-    h := hmac.New( sha256.New, key )
+    h := hmac.New( sha256.New, []byte(keyHex) )
     h.Write([]byte(toSign))
     sha := hex.EncodeToString(h.Sum(nil))
     return "Bearer "+toSign+"."+sha, nil

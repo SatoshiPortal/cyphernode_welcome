@@ -1,0 +1,16 @@
+.masthead {
+    height: calc(100vh - 75px);
+    min-height: 300px;
+    background-color: #410051;
+}
+
+.logo {
+    margin: 100px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    height: 100%;
+    widows: 100%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
