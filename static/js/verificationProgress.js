@@ -113,4 +113,4 @@ var loadVerificationProgress = function() {
 }
 
 loadVerificationProgress();
-setInterval( loadVerificationProgress, 5000 );
+setInterval( loadVerificationProgress, 30000 );
