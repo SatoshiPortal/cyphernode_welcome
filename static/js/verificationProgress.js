@@ -74,7 +74,7 @@ var loadVerificationProgress = function() {
                         }
                         var pBar = document.getElementById('progress-bar');
                         if( pBar ) {
-                            if( eta === 0 ) {
+                            if( eta === 0 && result.verificationprogress >= 0.99 ) {
                                 pBar.classList.remove("bg-danger", "progress-bar-striped", "progress-bar-animated")
                                 pBar.classList.add("bg-success");
                             } else {
@@ -87,7 +87,7 @@ var loadVerificationProgress = function() {
                         }
                         var pText = document.getElementById('progress-text');
                         if( pText ) {
-                            if( eta === 0 ) {
+                            if( eta === 0 && result.verificationprogress >= 0.99 ) {
                                 pText.innerText = "Initial block download complete!";
                             } else {
                                 pText.innerText = "Initial block download complete in "+durationFormatter(eta);
