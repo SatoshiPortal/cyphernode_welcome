@@ -63,10 +63,10 @@ var loadVerificationProgress = function() {
                     if( top.progressStart === 0 ) {
                         top.progressStart = result.verificationprogress;
                         top.progressStartTime = parseInt((new Date())/1000);
-                    } else {
+                    } else if( result.verificationprogress >= top.progressStart ) {
+                        // only update display when real progress is made ;-)
                         var deltaS = parseInt((new Date())/1000) - top.progressStartTime;
                         var deltaP = result.verificationprogress - top.progressStart;
-
 
                         var eta = 0;
                         if( deltaP !== 0 ) {
@@ -74,7 +74,7 @@ var loadVerificationProgress = function() {
                         }
                         var pBar = document.getElementById('progress-bar');
                         if( pBar ) {
-                            if( eta===0 && result.verificationprogress >= 0.99 ) {
+                            if( eta === 0 ) {
                                 pBar.classList.remove("bg-danger", "progress-bar-striped", "progress-bar-animated")
                                 pBar.classList.add("bg-success");
                             } else {
@@ -87,10 +87,10 @@ var loadVerificationProgress = function() {
                         }
                         var pText = document.getElementById('progress-text');
                         if( pText ) {
-                            if( eta === 0 && result.verificationprogress >= 0.99 ) {
-                                pText.innerText = "Verification complete!";
+                            if( eta === 0 ) {
+                                pText.innerText = "Initial block download complete!";
                             } else {
-                                pText.innerText = "Verification complete in "+durationFormatter(eta);
+                                pText.innerText = "Initial block download complete in "+durationFormatter(eta);
                             }
                         }
                     }
