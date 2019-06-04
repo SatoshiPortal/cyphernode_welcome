@@ -39,28 +39,52 @@ import (
   "io/ioutil"
   "net/http"
   "os"
+  "path/filepath"
+  "reflect"
+  "strings"
 )
 
 type BlockChainInfo struct {
   Verificationprogress float32  `json:"verificationprogress"`
 }
 
-type InstallationInfoFeature struct {
+type TemplateData struct {
+  InstallationInfo *InstallationInfo
+  ForwardedPrefix string
+  FeatureByName map[string]bool
+}
+
+type FeatureState struct {
   Name string `json:"name"`
-  CoreFeature bool `json:"coreFeature"`
   Working bool `json:"working"`
 }
 
-type InstallationInfoContainer struct {
+type Feature struct {
   Name string `json:"name"`
+  Label string `json:"label"`
+  Host string `json:"host"`
+  Networks []string `json:"networks"`
+  Docker string `json:"docker"`
+  Extra interface{} `json:"extra"`
+  Error bool
+}
+
+type OptionalFeature struct {
+  Feature
   Active bool `json:"active"`
 }
 
-type TemplateData struct {
-  Features []InstallationInfoFeature  `json:"features"`
-  Containers []InstallationInfoContainer  `json:"containers"`
-  ForwardedPrefix string
-  FeatureByName map[string]bool
+type InstallationState struct {
+  FeatureStates []FeatureState `json:"features"`
+}
+
+type InstallationInfo struct {
+  ApiVersions []string `json:"api_versions"`
+  SetupVersion string `json:"setup_version"`
+  BitcoinVersion string `json:"bitcoin_version"`
+  Features []Feature `json:"features"`
+  OptionalFeatures []OptionalFeature `json:"optional_features"`
+  DevMode bool `json:"devmode"`
 }
 
 var auth *cnAuth.CnAuth
@@ -68,6 +92,7 @@ var statsKeyLabel string
 var rootTemplate *template.Template
 var statusUrl string
 var installationInfoUrl string
+var installationStateUrl string
 var configArchiveUrl string
 var certsUrl string
 var passwordHashes map[string][]byte
@@ -123,35 +148,81 @@ func getBodyUsingAuth( url string ) ([]byte,error) {
 }
 
 func  getInstallatioInfo() (*TemplateData,error) {
-  log.Info("getInstallatioInfo")
-  body,err := getBodyUsingAuth( installationInfoUrl )
+  log.Info("getInstallationState")
+  body,err := getBodyUsingAuth( installationStateUrl )
 
   if err != nil {
-    log.Errorf("getInstallatioInfo: %s", err)
+    log.Errorf("getInstallationState: %s", err)
     return nil,err
   }
 
-  log.Infof("getInstallatioInfo: %", string(body))
+  log.Infof("getInstallationState: %", string(body))
 
 
-  installationInfo := new(TemplateData)
+  installationState := new(InstallationState)
 
-  err = json.Unmarshal( body, &installationInfo )
+  err = json.Unmarshal( body, &installationState)
 
   if err != nil {
-    log.Errorf("getInstallatioInfo: %s", err)
+    log.Errorf("getInstallationState: %s", err)
     return nil,err
   }
 
-  // map features to FeatureByName
-  installationInfo.FeatureByName = make( map[string]bool, 0 )
-  for f := 0 ; f< len(installationInfo.Features); f++ {
-    installationInfo.FeatureByName[installationInfo.Features[f].Name] = installationInfo.Features[f].Working
+  log.Info("getInstallationState: json done")
+
+
+  log.Info("getInstallationInfo")
+  body,err = getBodyUsingAuth( installationInfoUrl )
+
+  if err != nil {
+    log.Errorf("getInstallationInfo: %s", err)
+    return nil,err
   }
 
-  log.Info("getInstallatioInfo: json done")
+  log.Infof("getInstallationInfo: %", string(body))
 
-  return installationInfo,nil
+
+  installationInfo := new(InstallationInfo)
+
+  err = json.Unmarshal( body, &installationInfo)
+
+  if err != nil {
+    log.Errorf("getInstallationInfo: %s", err)
+    return nil,err
+  }
+
+  log.Info("getInstallationInfo: json done")
+  templateData := new(TemplateData)
+
+  templateData.FeatureByName = make( map[string]bool )
+
+  for j:=0; j< len(installationInfo.Features); j++ {
+    templateData.FeatureByName[installationInfo.Features[j].Label] = true
+  }
+  for j:=0; j< len(installationInfo.OptionalFeatures); j++ {
+    templateData.FeatureByName[installationInfo.OptionalFeatures[j].Label] = true
+  }
+
+  for i:=0; i< len(installationState.FeatureStates); i++ {
+    found := false
+    for j:=0; j< len(installationInfo.Features); j++ {
+      if installationInfo.Features[j].Label == installationState.FeatureStates[i].Name {
+        installationInfo.Features[j].Error = !installationState.FeatureStates[i].Working
+        found = true
+        break
+      }
+    }
+    for j:=0; !found && j< len(installationInfo.OptionalFeatures); j++ {
+      if installationInfo.OptionalFeatures[j].Label == installationState.FeatureStates[i].Name {
+        installationInfo.OptionalFeatures[j].Error = !installationState.FeatureStates[i].Working
+        break
+      }
+    }
+  }
+
+  templateData.InstallationInfo = installationInfo
+
+  return templateData,nil
 }
 
 func VerificationProgressHandler(w http.ResponseWriter, r *http.Request) {
@@ -233,13 +304,30 @@ func main() {
   statsKeyLabel = viper.GetString("gatekeeper.key_label")
   statusUrl = viper.GetString("gatekeeper.status_url")
   installationInfoUrl = viper.GetString("gatekeeper.installation_info_url")
+  installationStateUrl = viper.GetString("gatekeeper.installation_state_url")
   configArchiveUrl = viper.GetString("gatekeeper.config_archive_url")
   certsUrl = viper.GetString("gatekeeper.certs_url")
   certFile := viper.GetString("gatekeeper.cert_file")
   listenTo := viper.GetString("server.listen")
   indexTemplate := viper.GetString("server.index_template")
 
-  rootTemplate, err = template.ParseFiles(indexTemplate)
+
+  funcMap := template.FuncMap {
+    "toString": func( v interface{} ) string {
+      v2 := reflect.ValueOf(v)
+      if v2.Kind() == reflect.Slice {
+        s := make( []string, v2.Len() )
+        for i := 0; i < v2.Len(); i++ {
+          s[i]=v2.Index(i).Interface().(string)
+        }
+        return strings.Join( s, ", ")
+      }
+      return fmt.Sprintf("%v", v)
+    },
+    "toTitle": strings.Title,
+  }
+
+  rootTemplate, err = template.New(filepath.Base(indexTemplate)).Funcs(funcMap).ParseFiles(indexTemplate)
 
   if err != nil {
     log.Errorf("Error loading root template: %s", err)

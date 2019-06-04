@@ -72,73 +72,76 @@
 <script src="static/js/verificationProgress.js"></script>
 
 <section class="py-2">
+
   <div class="container">
-    <div class="row">
-      <div class="col-md-6">
-        <table class="table table-striped table-borderless">
-          <thead>
-          <tr>
-            <th>Features</th>
-            <th></th>
-          </tr>
-          </thead>
-          <tbody>
-          {{range .Features}}
-            <tr>
-              <td>{{.Name}}{{if .CoreFeature}} <span class="small">(core component)</span>{{end}}
-              </td>
-              <td>
-                {{if .Working}}
-                  <span class="float-right" style="color: #410051;">
-                    <i class="fas fa-check-circle"></i>
-                  </span>
-                {{else}}
-                  <span class="float-right" style="color: Tomato;">
-                    <i class="fas fa-ban"></i>
-                  </span>
-                {{end}}
-              </td>
-            </tr>
-          {{else}}
-            <div><strong>no rows</strong></div>
+    <h3 class="font-weight-light">Features</h3>
+    <ul class="list-group">
+      {{range .InstallationInfo.Features}}
+          <li class="list-group-item">
+          <h5 class="text-center p-3">
+            {{if .Error}}
+              <span style="color: Tomato;">
+                <i class="fas fa-ban"></i>
+              </span>
+            {{else}}
+              <span style="color: #410051;">
+                <i class="fas fa-check-circle"></i>
+              </span>
+            {{end}}
+            {{.Name}}
+          </h5>
+          <ul class="list-group">
+            <li class="list-group-item"><span class="font-weight-bold">Host:</span> <span>{{.Host}}</span></li>
+            <li class="list-group-item"><span class="font-weight-bold">Networks:</span> <span>{{ toString .Networks}}</span></li>
+            <li class="list-group-item"><span class="font-weight-bold">Docker:</span> <span>{{.Docker}}</span></li>
+
+          {{if .Extra}}
+            {{ range $k, $v := .Extra}}
+              <li class="list-group-item"><span class="font-weight-bold">{{toTitle $k}}:</span> <span>{{toString $v}}</span></li>
+            {{end}}
           {{end}}
-          </tbody>
-        </table>
-      </div>
-      <div class="col-md-6">
-        <table class="table table-striped table-borderless">
-          <thead>
-          <tr>
-            <th>Containers</th>
-            <th></th>
-          </tr>
-          </thead>
-          <tbody>
-          {{range .Containers}}
-            <tr>
-              <td>{{.Name}}</td>
-              <td align="left">
-                {{if .Active}}
-                  <span class="float-right" style="color: #410051;">
-                    <i class="fas fa-check-circle"></i>
-                  </span>
-                {{else}}
-                  <span class="float-right" style="color: Tomato;">
-                    <i class="fas fa-ban"></i>
-                  </span>
-                {{end}}
-              </td>
-            </tr>
-          {{else}}
-            <div><strong>no rows</strong></div>
+          </ul>
+        </li>
+      {{end}}
+      {{range .InstallationInfo.OptionalFeatures}}
+        {{if .Active}}
+          <li class="list-group-item">
+        {{else}}
+          <li class="list-group-item text-black-50">
+        {{end}}
+        <h5 class="text-center p-3">
+          {{if .Error}}
+            <span style="color: Tomato;">
+                <i class="fas fa-ban"></i>
+              </span>
+          {{else if .Active}}
+            <span style="color: #410051;">
+                <i class="fas fa-check-circle"></i>
+              </span>
           {{end}}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          {{.Name}}
+          {{if not .Active}}
+            (deactivated)
+          {{end}}
+        </h5>
+        <ul class="list-group">
+          <li class="list-group-item"><span class="font-weight-bold">Host:</span> <span>{{.Host}}</span></li>
+          <li class="list-group-item"><span class="font-weight-bold">Networks:</span> <span>{{ toString .Networks}}</span></li>
+          <li class="list-group-item"><span class="font-weight-bold">Docker:</span> <span>{{.Docker}}</span></li>
+
+          {{if .Extra}}
+            {{ range $k, $v := .Extra}}
+              <li class="list-group-item"><span class="font-weight-bold">{{toTitle $k}}:</span> <span>{{toString $v}}</span></li>
+            {{end}}
+          {{end}}
+        </ul>
+        </li>
+      {{end}}
+    </ul>
   </div>
 </section>
 
 </body>
 
 </html>
+
