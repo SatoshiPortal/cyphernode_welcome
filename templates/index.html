@@ -56,13 +56,13 @@
   <div class="container">
     <a name="files"></a><h3 class="font-weight-light">Files:</h3>
       <div>The following files have been encrypted with your configuration passphrase and your client keys passphrase, respectively:</div>
-      <ul>
-        <li><a href="config.7z">Download your Cyphernode <b>configurations</b>, can be used for another Cyphernode deployment</a></li>
-        <li><a href="certs.7z">Download Client <b>API ID's and keys</b>, needed in your client apps</a></li>
+      <div class="list-group mt-3">
+        <a class="list-group-item list-group-item-action" href="config.7z">Download your Cyphernode <b>configurations</b>, can be used for another Cyphernode deployment</a>
+        <a class="list-group-item list-group-item-action" href="certs.7z">Download Client <b>API ID's and keys</b>, needed in your client apps</a>
         {{if index .FeatureByName "lightning" }}
-        <li><a href="/sparkwallet">Your Lightning Network Wallet (Spark Wallet)</a></li>
+        <a class="list-group-item list-group-item-action" href="/sparkwallet">Your Lightning Network Wallet (Spark Wallet)</a>
         {{end}}
-      </ul>
+      </div>
   </div>
 </section>
 
