@@ -90,11 +90,11 @@ type InstallationInfo struct {
 var auth *cnAuth.CnAuth
 var statsKeyLabel string
 var rootTemplate *template.Template
-var statusUrl string
-var installationInfoUrl string
-var installationStateUrl string
-var configArchiveUrl string
-var certsUrl string
+var statusEndpoint string
+var installationInfoEndpoint string
+var installationStateEndpoint string
+var configArchiveEndpoint string
+var certsEndpoint string
 var passwordHashes map[string][]byte
 
 var httpClient *http.Client
@@ -149,7 +149,7 @@ func getBodyUsingAuth( url string ) ([]byte,error) {
 
 func  getInstallatioInfo() (*TemplateData,error) {
   log.Info("getInstallationState")
-  body,err := getBodyUsingAuth( installationStateUrl )
+  body,err := getBodyUsingAuth(os.Getenv("CYPHERNODE_URL")+installationStateEndpoint)
 
   if err != nil {
     log.Errorf("getInstallationState: %s", err)
@@ -172,7 +172,7 @@ func  getInstallatioInfo() (*TemplateData,error) {
 
 
   log.Info("getInstallationInfo")
-  body,err = getBodyUsingAuth( installationInfoUrl )
+  body,err = getBodyUsingAuth(os.Getenv("CYPHERNODE_URL")+installationInfoEndpoint)
 
   if err != nil {
     log.Errorf("getInstallationInfo: %s", err)
@@ -227,7 +227,7 @@ func  getInstallatioInfo() (*TemplateData,error) {
 
 func VerificationProgressHandler(w http.ResponseWriter, r *http.Request) {
 
-  body,err := getBodyUsingAuth( statusUrl )
+  body,err := getBodyUsingAuth(os.Getenv("CYPHERNODE_URL")+statusEndpoint)
 
   if err != nil {
     log.Errorf("VerificationProgressHandler: %s", err)
@@ -253,7 +253,7 @@ func VerificationProgressHandler(w http.ResponseWriter, r *http.Request) {
 
 func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 
-  body,err := getBodyUsingAuth( configArchiveUrl )
+  body,err := getBodyUsingAuth(os.Getenv("CYPHERNODE_URL")+configArchiveEndpoint)
 
   if err != nil {
     log.Errorf("ConfigHandler: %s", err)
@@ -267,7 +267,7 @@ func ConfigHandler(w http.ResponseWriter, r *http.Request) {
 
 func CertsHandler(w http.ResponseWriter, r *http.Request) {
 
-  body,err := getBodyUsingAuth( certsUrl )
+  body,err := getBodyUsingAuth(os.Getenv("CYPHERNODE_URL")+certsEndpoint)
 
   if err != nil {
     log.Errorf("CertsHandler: %s", err)
@@ -300,17 +300,16 @@ func main() {
     return
   }
 
-  keysFilePath := viper.GetString("gatekeeper.key_file")
-  statsKeyLabel = viper.GetString("gatekeeper.key_label")
-  statusUrl = viper.GetString("gatekeeper.status_url")
-  installationInfoUrl = viper.GetString("gatekeeper.installation_info_url")
-  installationStateUrl = viper.GetString("gatekeeper.installation_state_url")
-  configArchiveUrl = viper.GetString("gatekeeper.config_archive_url")
-  certsUrl = viper.GetString("gatekeeper.certs_url")
-  certFile := viper.GetString("gatekeeper.cert_file")
+  keysFilePath := viper.GetString("security.key_file")
+  statsKeyLabel = viper.GetString("security.key_label")
+  certFile := viper.GetString("security.cert_file")
+  statusEndpoint = viper.GetString("api.status_endpoint")
+  installationInfoEndpoint = viper.GetString("api.installation_info_endpoint")
+  installationStateEndpoint = viper.GetString("api.installation_state_endpoint")
+  configArchiveEndpoint = viper.GetString("api.config_archive_endpoint")
+  certsEndpoint = viper.GetString("api.certs_endpoint")
   listenTo := viper.GetString("server.listen")
   indexTemplate := viper.GetString("server.index_template")
-
 
   funcMap := template.FuncMap {
     "toString": func( v interface{} ) string {
@@ -371,6 +370,7 @@ func main() {
   }
 
   log.Infof("Started cyphernode status page backend. URL Port [%v] ",listenTo)
+  log.Infof( "Using %s as API base url.", os.Getenv("CYPHERNODE_URL") )
 
   router := mux.NewRouter()
 
