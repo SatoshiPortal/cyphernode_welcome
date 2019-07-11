@@ -108,9 +108,9 @@ var loadVerificationProgress = function() {
                         if( deltaP === 0 && result.verificationprogress === 1.0 ) {
                             pText.innerText = "We are in sync!";
                         } else {
-                            var progressText = "Let's see...";
+                            var progressText = (result.verificationprogress*100).toString()+"%";
                             if( eta !== 0 ) {
-                                progressText = "Sync status reached in about "+durationFormatter(eta);
+                                progressText += " - Sync status reached in about "+durationFormatter(eta);
                             }
                             pText.innerText = progressText;
                         }
