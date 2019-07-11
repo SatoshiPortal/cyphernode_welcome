@@ -69,8 +69,7 @@ var loadVerificationProgress = function() {
                     console.log( e );
                 }
 
-                if( result && result.verificationprogress ) {
-                    result.verificationprogress = parseInt(result.verificationprogress*100000)/100000;
+                if( result && result.verificationprogress !== undefined ) {
                     if( top.progressStart === 0 ) {
                         top.progressStart = result.verificationprogress;
                         top.progressStartTime = parseInt((new Date())/1000);
@@ -108,7 +107,7 @@ var loadVerificationProgress = function() {
                         if( deltaP === 0 && result.verificationprogress === 1.0 ) {
                             pText.innerText = "We are in sync!";
                         } else {
-                            var progressText = (result.verificationprogress*100).toString()+"%";
+                            var progressText = ((parseInt(result.verificationprogress*10000000)/10000000)*100).toString()+"%";
                             if( eta !== 0 ) {
                                 progressText += " - Sync status reached in about "+durationFormatter(eta);
                             }
