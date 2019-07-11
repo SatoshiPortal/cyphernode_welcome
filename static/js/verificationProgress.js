@@ -45,7 +45,18 @@ var loadVerificationProgress = function() {
     request.open('GET', url );
     request.responseType = 'text';
 
-    request.onerror = function(e) {  }
+    request.onerror = function(e) {
+        var pBar = document.getElementById('progress-bar');
+        if( pBar ) {
+            pBar.style.width = "100%";
+            pBar.classList.remove("bg-success", "progress-bar-striped");
+            pBar.classList.add("bg-danger");
+        }
+        var pText = document.getElementById('progress-text');
+        if( pText ) {
+            pText.innerText = "Error connecting to cyphernode";
+        }
+    }
 
     request.onload = function() {
         if (request.readyState===4 ){
@@ -63,35 +74,45 @@ var loadVerificationProgress = function() {
                     if( top.progressStart === 0 ) {
                         top.progressStart = result.verificationprogress;
                         top.progressStartTime = parseInt((new Date())/1000);
-                    } else if( result.verificationprogress >= top.progressStart ) {
-                        // only update display when real progress is made ;-)
-                        var deltaS = parseInt((new Date())/1000) - top.progressStartTime;
-                        var deltaP = result.verificationprogress - top.progressStart;
+                    }
+                    // only update display when real progress is made ;-)
+                    var deltaS = parseInt((new Date())/1000) - top.progressStartTime;
+                    var deltaP = result.verificationprogress - top.progressStart;
 
-                        var eta = 0;
-                        if( deltaP !== 0 ) {
-                            eta = deltaS/deltaP;
-                        }
-                        var pBar = document.getElementById('progress-bar');
-                        if( pBar ) {
-                            if( eta === 0 && result.verificationprogress >= 0.99 ) {
-                                pBar.classList.remove("bg-danger", "progress-bar-striped", "progress-bar-animated")
-                                pBar.classList.add("bg-success");
-                            } else {
-                                pBar.classList.remove("bg-danger", "bg-success");
-                                pBar.classList.add("progress-bar-striped", "progress-bar-animated");
-                            }
+                    var eta = top.eta || 0;
 
-                            pBar.classList.remove("bg-danger");
-                            pBar.style.width = (result.verificationprogress*100)+"%";
+                    if( deltaP < 0 ) {
+                        deltaP = 0;
+                    }
+
+                    if( deltaP !== 0 && result.verificationprogress !== 1.0 ) {
+                        eta = deltaS/deltaP;
+                        top.eta = eta;
+                    }
+
+                    var pBar = document.getElementById('progress-bar');
+                    if( pBar ) {
+                        if( deltaP === 0 && result.verificationprogress === 1.0 ) {
+                            pBar.classList.remove("bg-danger", "progress-bar-striped", "progress-bar-animated")
+                            pBar.classList.add("bg-success");
+                        } else {
+                            pBar.classList.remove("bg-danger", "bg-success");
+                            pBar.classList.add("progress-bar-striped", "progress-bar-animated");
                         }
-                        var pText = document.getElementById('progress-text');
-                        if( pText ) {
-                            if( eta === 0 && result.verificationprogress >= 0.99 ) {
-                                pText.innerText = "Initial block download complete!";
-                            } else {
-                                pText.innerText = "Initial block download complete in "+durationFormatter(eta);
+
+                        pBar.classList.remove("bg-danger");
+                        pBar.style.width = (result.verificationprogress*100)+"%";
+                    }
+                    var pText = document.getElementById('progress-text');
+                    if( pText ) {
+                        if( deltaP === 0 && result.verificationprogress === 1.0 ) {
+                            pText.innerText = "We are in sync!";
+                        } else {
+                            var progressText = "Let's see...";
+                            if( eta !== 0 ) {
+                                progressText = "Sync status reached in about "+durationFormatter(eta);
                             }
+                            pText.innerText = progressText;
                         }
                     }
                 }
