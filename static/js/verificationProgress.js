@@ -70,6 +70,12 @@ var loadVerificationProgress = function() {
                 }
 
                 if( result && result.verificationprogress !== undefined ) {
+
+                    // set to 1 if initial block download is finished
+                    if( !result.initialblockdownload ) {
+                        result.verificationprogress = 1.0;
+                    }
+
                     if( top.progressStart === 0 ) {
                         top.progressStart = result.verificationprogress;
                         top.progressStartTime = parseInt((new Date())/1000);

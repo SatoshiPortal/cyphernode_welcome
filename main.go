@@ -46,6 +46,7 @@ import (
 
 type BlockChainInfo struct {
   Verificationprogress float32  `json:"verificationprogress"`
+  InitialBlockdownload bool  `json:"initialblockdownload"`
 }
 
 type TemplateData struct {
