@@ -62,6 +62,11 @@ func ( cnAuth *CnAuth ) parseConfigFile(file *os.File) error {
     line := []byte(scanner.Text())
     fieldsKV :=bytes.Split( bytes.Trim(line, " "), []byte(";") )
 
+    if len(fieldsKV) < 3 {
+      // Something like an empty line
+      continue
+    }
+
     // only first 3 kv pairs are relevant
     var keyLabel string
     var keyHex string
