@@ -1,32 +1,18 @@
-FROM golang:1.11.6-alpine3.8 as builder
+FROM golang:latest as builder
 
-RUN apk add git build-base
+ADD . /src
 
-RUN mkdir -p /go/src/cyphernode_welcome
+WORKDIR /src
+RUN ./build.sh
 
-ADD cnAuth /go/src/cyphernode_welcome/cnAuth
-COPY main.go /go/src/cyphernode_welcome
+FROM scratch
 
-WORKDIR /go/src/cyphernode_welcome
-
-RUN go get
-
-RUN go build main.go
-RUN chmod +x /go/src/cyphernode_welcome/main
-
-FROM cyphernode/alpine-glibc-base:3.8
-
-RUN apk add ca-certificates
-
-RUN mkdir -p /app
-RUN mkdir -p /data
-
-COPY --from=builder /go/src/cyphernode_welcome/main /app/cyphernode_welcome
 ADD static /app/static
 ADD templates /app/templates
 
-ENV PATH=$PATH:/app/
+COPY --from=builder /etc/ssl/certs /etc/ssl/certs
+COPY --from=builder /src/cyphernode_welcome /cyphernode_welcome
 
 WORKDIR /app/
 
-CMD ["cyphernode_welcome"]
+CMD ["/cyphernode_welcome"]

@@ -26,14 +26,17 @@ package main
 
 import (
   "bytes"
+  "crypto/hmac"
+  "crypto/sha256"
   "crypto/tls"
   "crypto/x509"
-  "cyphernode_welcome/cnAuth"
+  "encoding/base64"
+  "encoding/hex"
   "encoding/json"
+  "errors"
   "fmt"
   "github.com/gorilla/mux"
   "github.com/op/go-logging"
-  "github.com/pkg/errors"
   "github.com/spf13/viper"
   "html/template"
   "io/ioutil"
@@ -42,6 +45,7 @@ import (
   "path/filepath"
   "reflect"
   "strings"
+  "time"
 )
 
 type BlockChainInfo struct {
@@ -88,7 +92,24 @@ type InstallationInfo struct {
   DevMode bool `json:"devmode"`
 }
 
-var auth *cnAuth.CnAuth
+type App struct {
+  Label string `json:"label, omitempty"`
+  Name string `json:"name, omitempty"`
+  Path string `json:"path, omitempty"`
+  URL string `json:"url, omitempty"`
+  Email string `json:"email, omitempty"`
+  Latest string `json:"latest, omitempty"`
+  ClientID string `json:"clientID, omitempty"`
+  ClientSecret string `json:"clientSecret, omitempty"`
+  Keys []*Key `json:"keys, omitempty"`
+}
+
+type Key struct {
+  Label string `json:"label"`
+  Data string `json:"data"`
+  Groups []string `json:"groups"`
+}
+
 var statsKeyLabel string
 var rootTemplate *template.Template
 var statusEndpoint string
@@ -96,7 +117,9 @@ var installationInfoEndpoint string
 var installationStateEndpoint string
 var configArchiveEndpoint string
 var certsEndpoint string
-var passwordHashes map[string][]byte
+var key *Key
+var clientID string
+var clientSecret string
 
 var httpClient *http.Client
 var log = logging.MustGetLogger("main")
@@ -118,7 +141,7 @@ func getBodyUsingAuth( url string ) ([]byte,error) {
     return nil, err
   }
 
-  bearer, err := auth.BearerFromKey(statsKeyLabel)
+  bearer, err := BearerFromKey(key)
   if err != nil {
     return nil, err
   }
@@ -280,14 +303,6 @@ func CertsHandler(w http.ResponseWriter, r *http.Request) {
   fmt.Fprint(w, bytes.NewBuffer(body))
 }
 
-func Secret(user, realm string) string {
-  if user == "john" {
-    // password is "hello"
-    return "$1$dlPL2MqE$oQmn16q49SqdmhenQuNgs1"
-  }
-  return ""
-}
-
 func main() {
 
   viper.SetConfigName("config")
@@ -301,9 +316,9 @@ func main() {
     return
   }
 
-  keysFilePath := viper.GetString("security.key_file")
+  certFile := os.Getenv("CYPHERNODE_CERT")
+  appDescriptionFile := os.Getenv( "APP_DESCRIPTION_FILE" )
   statsKeyLabel = viper.GetString("security.key_label")
-  certFile := viper.GetString("security.cert_file")
   statusEndpoint = viper.GetString("api.status_endpoint")
   installationInfoEndpoint = viper.GetString("api.installation_info_endpoint")
   installationStateEndpoint = viper.GetString("api.installation_state_endpoint")
@@ -331,9 +346,36 @@ func main() {
 
   if err != nil {
     log.Errorf("Error loading root template: %s", err)
-    log.Error(err)
     return
   }
+
+  installedAppsIndexJsonBytes, err := ioutil.ReadFile( appDescriptionFile )
+  if err != nil {
+    log.Errorf("Error loading app description file: %s", err)
+    return
+  }
+
+  var appDescription App
+
+  err = json.Unmarshal(installedAppsIndexJsonBytes, &appDescription )
+  if err != nil {
+    log.Errorf("Error loading app description file: %s", err)
+    return
+  }
+
+  for _, k := range appDescription.Keys {
+    if k.Label == statsKeyLabel {
+      key = k
+    }
+  }
+
+  if key == nil {
+    log.Errorf("No key for accessing cyphernode")
+    return
+  }
+
+  clientID = appDescription.ClientID
+  clientSecret = appDescription.ClientSecret
 
   caCert, err := ioutil.ReadFile(certFile)
   if err != nil {
@@ -352,17 +394,6 @@ func main() {
       },
     },
   }
-
-  file, err := os.Open(keysFilePath)
-
-  if err != nil {
-    log.Errorf("Error loading keys file: %s", err)
-    log.Error(err)
-    return
-  }
-
-  auth, err = cnAuth.NewCnAuthFromFile( file )
-  file.Close()
 
   if err != nil {
     log.Errorf("Error creating auther: %s", err)
@@ -386,4 +417,16 @@ func main() {
   route := router.PathPrefix("/static")
 
   log.Fatal(route, http.ListenAndServe(listenTo, nil))
+}
+
+func BearerFromKey( key *Key ) (string, error) {
+    header := "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"
+    payload := fmt.Sprintf("{\"id\":\"%s\",\"exp\":%d}", key.Label, time.Now().Unix()+10 )
+    h64 := base64.StdEncoding.EncodeToString( []byte(header) )
+    p64 := base64.StdEncoding.EncodeToString( []byte(payload) )
+    toSign := h64+"."+p64
+    h := hmac.New( sha256.New, []byte(key.Data) )
+    h.Write([]byte(toSign))
+    sha := hex.EncodeToString(h.Sum(nil))
+    return "Bearer "+toSign+"."+sha, nil
 }

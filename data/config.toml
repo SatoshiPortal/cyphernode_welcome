@@ -12,5 +12,3 @@ certs_endpoint = "/s/stats/client.7z"
 
 [security]
 key_label = "000"
-key_file = "/data/keys.properties"
-cert_file = "/data/cert.pem"

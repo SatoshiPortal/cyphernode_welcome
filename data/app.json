@@ -1,0 +1,44 @@
+{
+  "label": "sparkwallet",
+  "name": "Spark wallet",
+  "path": "/Users/jash/go/src/github.com/schulterklopfer/cam/apps/YFeXUM86dipa0ORC2iclAcMcSFU",
+  "url": "some url",
+  "email": "skp@skp.rocks",
+  "latest": "0.2.2",
+  "source": "git://github.com/SatoshiPortal/cypherapps.git",
+  "candidates": [
+    {
+      "version": "0.2.2",
+      "dependencies": [
+        {
+          "label": "api",
+          "version": "v0"
+        },
+        {
+          "label": "bitcoin",
+          "version": "~0.18.0"
+        },
+        {
+          "label": "lightning",
+          "version": "~0.7.0"
+        }
+      ],
+      "files": [
+        "cookie",
+        "docker-compose.yaml",
+        "test.sh"
+      ]
+    }
+  ],
+  "clientID": "YFeXUM86dipa0ORC2iclAcMcSFU",
+  "clientSecret": "FTL4PLRDIKSWUJWA26D7FJY6H7E3POGUEOYR77OFGZEKPGDPX23Q",
+  "keys": [
+    {
+      "label": "000",
+      "data": "e4f3f7e6fe0f254a0c2b9569e10ce77fdd165e8265a9da12fd28d77acad85532",
+      "groups": [
+        "stats"
+      ]
+    }
+  ]
+}
