@@ -59,6 +59,9 @@
       <div class="list-group mt-3">
         <a class="list-group-item list-group-item-action" href="config.7z">Download your Cyphernode <b>configurations</b>, can be used for another Cyphernode deployment</a>
         <a class="list-group-item list-group-item-action" href="certs.7z">Download Client <b>API ID's and keys</b>, needed in your client apps</a>
+        {{if index .FeatureByName "specter" }}
+        <a class="list-group-item list-group-item-action" href="/specter">Bitcoin Node Manager with Hardware Wallet Support (Specter)</a>
+        {{end}}
         {{if index .FeatureByName "lightning" }}
         <a class="list-group-item list-group-item-action" href="/sparkwallet">Your Lightning Network Wallet (Spark Wallet)</a>
         {{end}}

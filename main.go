@@ -201,7 +201,7 @@ func  getInstallatioInfo() (*TemplateData,error) {
     templateData.FeatureByName[installationInfo.Features[j].Label] = true
   }
   for j:=0; j< len(installationInfo.OptionalFeatures); j++ {
-    templateData.FeatureByName[installationInfo.OptionalFeatures[j].Label] = true
+    templateData.FeatureByName[installationInfo.OptionalFeatures[j].Label] = installationInfo.OptionalFeatures[j].Active
   }
 
   for i:=0; i< len(installationState.FeatureStates); i++ {
